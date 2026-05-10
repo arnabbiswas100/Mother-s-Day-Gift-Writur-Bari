@@ -7,17 +7,21 @@ import BookCard from "./BookCard";
 
 // Particle type per season
 const PARTICLE_TYPE = {
+  basonto: "flower",
   summer: "leaf",
   monsoon: "rain",
   autumn: "leaf",
+  hemonto: "wind",
   winter: "snow",
 };
 
 // Particle count per season — bold and prominent
 const PARTICLE_COUNT = {
+  basonto: 40,
   summer: 45,
   monsoon: 80,
   autumn: 50,
+  hemonto: 35,
   winter: 55,
 };
 

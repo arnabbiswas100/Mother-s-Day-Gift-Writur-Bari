@@ -91,6 +91,39 @@ export default function AmbientParticles({ color = "#888", count = 18, type = "d
         };
       }
 
+      if (type === "flower") {
+        return {
+          x: Math.random() * w,
+          y: fromTop ? Math.random() * -50 : Math.random() * h,
+          opacity: Math.random() * 0.5 + 0.25,
+          size: Math.random() * 5 + 3,
+          speedX: (Math.random() - 0.5) * 0.6,
+          speedY: Math.random() * 0.8 + 0.2,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: (Math.random() - 0.5) * 0.03,
+          wobbleAmp: Math.random() * 2 + 1,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.03,
+          petalCount: Math.floor(Math.random() * 3) + 4,
+          hueShift: (Math.random() - 0.5) * 20,
+        };
+      }
+
+      if (type === "wind") {
+        return {
+          x: fromTop ? Math.random() * -80 : Math.random() * w,
+          y: Math.random() * h,
+          opacity: Math.random() * 0.35 + 0.08,
+          length: Math.random() * 40 + 20,
+          thickness: Math.random() * 1.5 + 0.3,
+          speedX: Math.random() * 3 + 1.5,
+          speedY: (Math.random() - 0.5) * 0.4,
+          curve: Math.random() * Math.PI * 2,
+          curveSpeed: (Math.random() - 0.5) * 0.02,
+          curveAmp: Math.random() * 8 + 4,
+        };
+      }
+
       // Dust (default)
       return {
         x: Math.random() * w,
@@ -311,6 +344,106 @@ export default function AmbientParticles({ color = "#888", count = 18, type = "d
       }
     };
 
+    const drawFlower = (p) => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+
+      const r = Math.min(255, Math.max(0, rgb.r + p.hueShift));
+      const g = Math.min(255, Math.max(0, rgb.g + p.hueShift * 0.3));
+      const b = Math.min(255, Math.max(0, rgb.b - p.hueShift * 0.2));
+
+      // Draw petals in a circle
+      for (let i = 0; i < p.petalCount; i++) {
+        const angle = (Math.PI * 2 / p.petalCount) * i;
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+        ctx.beginPath();
+        ctx.ellipse(p.size * 0.8, 0, p.size * 1.2, p.size * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Center dot
+      ctx.fillStyle = `rgba(${Math.min(255, r + 40)},${Math.min(255, g + 20)},${Math.max(0, b - 20)},0.8)`;
+      ctx.beginPath();
+      ctx.arc(0, 0, p.size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // Update
+      p.wobble += p.wobbleSpeed;
+      p.x += p.speedX + Math.sin(p.wobble) * p.wobbleAmp;
+      p.y += p.speedY;
+      p.rotation += p.rotSpeed;
+
+      if (p.y > h + 30 || p.x < -30 || p.x > w + 30) {
+        Object.assign(p, createParticle(true));
+        p.x = Math.random() * w;
+      }
+    };
+
+    const drawWind = (p) => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+
+      // Curved wind streak
+      p.curve += p.curveSpeed;
+      const curveY = Math.sin(p.curve) * p.curveAmp;
+
+      const grad = ctx.createLinearGradient(
+        p.x, p.y + curveY,
+        p.x + p.length, p.y + curveY
+      );
+      grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+      grad.addColorStop(0.3, `rgba(${rgb.r},${rgb.g},${rgb.b},0.5)`);
+      grad.addColorStop(0.7, `rgba(${rgb.r},${rgb.g},${rgb.b},0.5)`);
+      grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = p.thickness;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y + curveY);
+      ctx.quadraticCurveTo(
+        p.x + p.length * 0.5, p.y + curveY + Math.sin(p.curve + 1) * p.curveAmp * 0.6,
+        p.x + p.length, p.y + curveY
+      );
+      ctx.stroke();
+
+      // Small wisp dots along the wind
+      if (p.thickness > 1) {
+        ctx.globalAlpha = p.opacity * 0.4;
+        ctx.fillStyle = color;
+        const dotX = p.x + p.length * 0.7;
+        const dotY = p.y + curveY + Math.sin(p.curve + 2) * 3;
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Update — moves horizontally
+      p.x += p.speedX;
+      p.y += p.speedY;
+
+      if (p.x > w + 60 || p.y < -30 || p.y > h + 30) {
+        Object.assign(p, createParticle(true));
+        p.x = -p.length;
+        p.y = Math.random() * h;
+      }
+    };
+
     const drawDust = (p) => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
@@ -344,6 +477,8 @@ export default function AmbientParticles({ color = "#888", count = 18, type = "d
         if (type === "rain") drawRain(p);
         else if (type === "leaf") drawLeaf(p);
         else if (type === "snow") drawSnow(p);
+        else if (type === "flower") drawFlower(p);
+        else if (type === "wind") drawWind(p);
         else drawDust(p);
       });
 

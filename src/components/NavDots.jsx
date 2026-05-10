@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 
 const NAV_ITEMS = [
   { id: "hero", label: "সূচনা" },
+  { id: "basonto", label: "বসন্ত" },
   { id: "summer", label: "গ্রীষ্ম" },
   { id: "monsoon", label: "বর্ষা" },
   { id: "autumn", label: "শরৎ" },
+  { id: "hemonto", label: "হেমন্ত" },
   { id: "winter", label: "শীত" },
   { id: "library", label: "গ্রন্থাগার" },
 ];
